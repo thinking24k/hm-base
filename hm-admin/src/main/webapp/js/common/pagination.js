@@ -7,7 +7,7 @@
 
 define([ 'jquery', 'utils','layer', 'widget', 'twbsPagination' ], function($, util,layer) {
 	(function($, undefined) {
-		$.widget("rato.pagination", {
+		$.widget("xxwl.pagination", {
 			options : {
 				prev : '<',
 				next : '>',
@@ -34,7 +34,7 @@ define([ 'jquery', 'utils','layer', 'widget', 'twbsPagination' ], function($, ut
 				//弹出层
 				//options.contentContainer.spin();
 				//加载层-
-				layer.load();
+				//layer.load();
 				
 				var _this = this;
 				var onPageClick = options.onPageClick;
@@ -68,20 +68,20 @@ define([ 'jquery', 'utils','layer', 'widget', 'twbsPagination' ], function($, ut
 				util.ajaxJson(url, queryParam, function(result) {
 				
 					//加载层-此处关闭
-					layer.closeAll('loading');
+					//layer.closeAll('loading');
 					
 					if (result.status == 0) {
 						return;
 					}
 			//		options.contentContainer.spin('stop');
-					var dataList = result.content.resultList;
+					var dataList = result.content.data;
 					var templateMethod = options.templateMethod;
 					var container = options.contentContainer.empty();
 					dataList && $.each(dataList, function(i, item) {
 						var html = templateMethod(item,i);
 						container.append(html);
 					});
-					var totalPage = result.content.totalPage;
+					var totalPage = result.content.pageTotal;
 					var visiblePages = _this.options.visiblePages;
 					visiblePages = visiblePages > totalPage ? totalPage
 							: visiblePages;
@@ -92,10 +92,10 @@ define([ 'jquery', 'utils','layer', 'widget', 'twbsPagination' ], function($, ut
 					}
 					totalPage = totalPage<page?page:totalPage;
 					_this.refresh({
-						startPage : result.content.pageNo,
+						startPage : result.content.pageIndex,
 						totalPages : totalPage,
 						visiblePages : visiblePages,
-						totalCount : result.content.totalCount
+						totalCount : result.content.pageTotal
 					});
 					_this.options.onComplete.apply(_this,[result]);
 					/**显示总条数**/

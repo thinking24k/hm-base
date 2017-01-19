@@ -6,84 +6,32 @@
  */
 (function(root,factory){
 	if (typeof define === "function" && define.amd) {
-        define(["jquery", 'require','layer','jq-migrate','bootstrap','skycons','jq-mmenu','core','jq-table','modernizr'], function($,require,layer) {
+        define(["jquery", 'require','layer','jq-migrate','bootstrap','skycons'/*,'jq-mmenu','core','jq-table','modernizr'*/], function($,require,layer) {
             return factory($, require,layer);
         });
     }
 	
 })(this,function($, require,layer, undefined){
 	/*网络请求基本配置*/
-	//var server_addr = 'http://192.168.0.121:9030',
-	// server_addr_https = 'https://192.168.0.121:8443';
-
-	var server_addr = 'http://localhost:8080',
+	var server_addr = 'http://localhost:8090',
 	  server_addr_https = 'https://localhost:8443';
 	   
 	var config = {
 		server_addr : server_addr,
 		server_addr_https : server_addr_https,
-		sdp_url : server_addr + '/ds-biz-sdp/',
-		sdp_https_url : server_addr_https + '/ds-biz-sdp/',
-		current_url : server_addr + '/mi-portal/',
-		current_url_https : server_addr_https + '/mi-portal/',
-		attachment_url : server_addr + '/mi-attachment',
-		game_default_logo : 'index_content/css/myImg/app02.png', /**游戏的默认LOGO图片路径***/
-		match_default_ico:"index_content/css/myImg/app05.png"
+		sdp_url : server_addr + '/hm-sdp/',
+		sdp_https_url : server_addr_https + '/hm-sdp/',
+		admin_url : server_addr + '/hm-admin/',
+		admin_url_https : server_addr_https + '/hm-admin/',
+		portal_url : server_addr + '/hm-portal/',
+		portal_url_https : server_addr_https + '/hm-portal/',
+		attachment_url : server_addr + '/hm-attachment'
 	};
-	//分页信息
-	/**var totalPage = 0,
-	pageNo = 1,
-	pageQueryDta;**/
-	var isInitPage = false,canGet = true;
-	var pageOptions = {
-	    /**listview 请传入listview对象,自己拼接html请传入选择器。如：#list**/
-		id : {},
-		/**单条数据处理的模板方法**/
-		templateMethod : function (item, i) {
-			return '';
-		},
-		/**分页地址**/
-		url : '',
-		/**分页下标**/
-		pageNo : 1,
-		totalPage : 0,
-		pageSize : 10,
-		queryClause : {},
-		orderClause : {},
-		/**success 执行在最后调用的方法**/
-		onComplete : function (data, pageOptions) {},
-		/**是否为https请求***/
-		/**isHttps : false,*/
-		/**总条数**/
-		totalCount : 0,
-		/**当当前分页列表为空时执行的方法**/
-		emptyList : function () {},
-		/**是否缓存**/
-		offline : false,
-		/**是否其他分页**/
-		isOtherPage:false
-	};
-	//弹动参数
-	var bounce={
-		autorf:true,//弹动后自动复原
-		downEndCall:function(scroll){
-			//下拉
-		},
-		upEndCall:function(scroll){
-			//上拉
-		}
-	};
+	
 	//toast优化处理//session有效期(毫秒)
-	var toastCount=0,SESSION_LIVE=30*60*1000;
+	var toastCount=0,loadindex=null,SESSION_LIVE=30*60*1000;
 	//需要压缩缩放的图片
 	var FILTERIMG=[".png",".PNG",".jpg",".JPG",".jpeg",".JPEG",".bmp",".BMP"];
-    //二级目录(页面路径正确)
-    var MULU=["unserCenter","myAccount"];
-    //分页弹动全局参数
-    var myScroll,
-    pullDownEl, pullDownOffset,
-    pullUpEl, pullUpOffset,
-    generatedCount = 0;
     //时间全局参数
     var currYear = (new Date()).getFullYear();	
 	var opt={};
@@ -101,15 +49,11 @@
         startYear: currYear - 10, //开始年份
         endYear: currYear + 10 //结束年份
 	};
-	//游戏参数
-	var WEGAMEINFO=localStorage.getItem("WE-GAMEAINFO");
-	WEGAMEINFO=WEGAMEINFO?JSON.parse(WEGAMEINFO):{};
 	//util
 	var util = {
 		server_addr : server_addr,
 		server_addr_https : server_addr_https,
 		config : config,
-		pageOptions : pageOptions,
 		/**
          * ajax http 请求
          * url, data, success, error
@@ -148,33 +92,31 @@
 				}
 				url = config.sdp_url + url;
 			}
+			if(!url.endsWith(".cmd")){
+				url =url+".cmd";
+			}
 			//ajax默认参数可覆盖
 			var ajaxSetting = {
 				url : '',
 				type : "POST",
 				dataType : "json",
 				isShowToast:true,
-				offline : undefined,
-				expires:300000,
 				contentType : "application/json;",
-				appVerify:true,
 				//测试 ZDcxMDYyNTUyNzE0YWFjMTMxNGZhZTQz   redAlert2
-				headers:{"TerminalCode":"m_game"},
-				complete:function (xhr, status) {
-                    
-                }
+				headers:{"TerminalCode":"hm_web"},
+				complete:function (xhr, status) {}
 			}
 			//传入参数覆盖默认参数
 			$.extend(ajaxSetting,obj);
 			
 			//等待动画
 			if(!toastCount && obj.isShowToast){
-    			
+				loadindex = layer.load(0, {shade: false}); //0代表加载的风格，支持0-2
 			}
 			toastCount=toastCount+1;
 			
 			// contentType
-            if ($.type(ajaxSetting.data) == "string") { //字符
+			if ($.type(ajaxSetting.data) == "string") { //字符
                 ajaxSetting.contentType = "text/html;charset=UTF-8";
             } else if ($.type(ajaxSetting.data) == "object") { //对象
                 //文件上传
@@ -192,25 +134,18 @@
 			//不允许覆盖参数及方法
 			ajaxSetting.url=url;
 			ajaxSetting.success=function (data) {
-			         //关闭当前页面的toast
-			         toastCount=toastCount-1;
+			        //关闭当前页面的toast
+			        toastCount=toastCount-1;
 					//是否开启等待动画，并是否需要关闭
-			         if(!toastCount && obj.isShowToast){
-                        //util.closeToast();
-                    }
-					
+			        if(!toastCount && obj.isShowToast){
+                       util.closeToast(loadindex);
+			        }
 					//服务器拦截是否登录
                     if (data.content == 'unlogin') {
-                        var url = window.location.pathname;
-                        //alert("url:"+url+"ajaxSetting:"+url);
-                        util.toLoginPage();
+                        window.location.href=config.admin_url;
                         /**避免执行其他自定义动作**/
                         return;
                     } 
-                    if (data.msgKey == "remembered") {
-                        
-                    }
-                    
                     if (typeof(obj.success) == "function") {
                         obj.success(data);
                     }
@@ -219,7 +154,7 @@
                ajaxSetting.error=function (e) {
                      toastCount=toastCount-1;
                      if(!toastCount && obj.isShowToast){
-                        //util.closeToast();
+                    	 util.closeToast(loadindex);
                      }				                    
                     if (typeof(obj.error) == "function") {
                         obj.error(e);
@@ -232,20 +167,7 @@
                 };**/
             //ajax请求
 			$.ajax(ajaxSetting);
-		},
-		/**
-		 * 分页 根据需要重写部分参数
-		 *url, queryParam, templateMethod,onComplete
-		 */
-		page : function (options) {
-			if (!isInitPage) {
-				initPage();
-				isInitPage = true;
-			}
-			$.extend(pageOptions, options);
-			//每次调用重置分页的编号
-			pageOptions.pageNo=1;
-			pageList();
+			util.sessionStorage.setVal('sessiontime', new Date().getTime());
 		},
 		/**
 		 * 获取地址栏参数
@@ -325,49 +247,6 @@
                 }
             });
 		},
-        /**
-         * 验证是否登陆
-         * @param value
-         */
-        isLogin:function(pageName){
-            var loginstate=util.locStorage.getVal('loginstate');
-            try{//local只存储字符
-            	loginstate=parseInt(loginstate);
-            }catch(e){
-            	util.toLoginPage(pageName);
-            	return false;
-            }
-            //手动退出
-            if(!loginstate){
-            	util.toLoginPage(pageName);
-            	return false;
-            }
-            //是否超过session有效期
-            if(loginstate-new Date().getTime()>SESSION_LIVE){
-                util.toLoginPage(pageName);
-                return false;
-            }
-            return true;
-        },
-        /**
-         * 跳转登陆页面
-         * @param value
-         */
-        toLoginPage:function(pageName){
-            //var url = window.location.pathname,loginUrl="binding-login.html";
-            var url = window.location.pathname,loginUrl="binding-login.html";
-                if(!pageName){
-                    //个人中心
-                    if(util.isSecMulu(url)){
-                        //loginUrl="../binding-login.html";
-                        loginUrl="../binding-login.html";
-                    }
-                }
-                //进入登陆页面最后跳转地址
-                util.locStorage.setVal('lastloginpage',pageName?pageName:url);
-                //打开登陆
-                window.location.href=loginUrl;
-        },
         getLoginInfo:function(c){
             util.ajax({
                 url : 'portal/user.cmd/center/base',
@@ -447,6 +326,23 @@
         			localStorage.removeItem(key);
         		}
         },
+        /**
+         * sessionStorage
+         */
+        sessionStorage:{
+        		setVal:function(key,val){
+        			if(typeof(val) == "object"){
+        				val=JSON.stringify(val);
+        			}
+        			sessionStorage.setItem(key,val);
+        		},
+        		getVal:function(key){
+        			return sessionStorage.getItem(key);
+        		},
+        		remove:function(key){
+        			sessionStorage.removeItem(key);
+        		}
+        },
         //提示层
         openToast:function(msg,duration,position,type){
         	if($.type(msg) == "object"){
@@ -466,8 +362,9 @@
         	}
         },
         //关闭提示层
-        closeToast:function(){
-        	layer.closeAll();
+        closeToast:function(index){
+        	//layer.closeAll();
+        	layer.close(index);
         },
     	//获取本地时间字符串
         getNowDate:function(date){
@@ -491,9 +388,4 @@
 	
 	return util;
 });
-/**
- * 
- *
- *
- *
- ***/
+

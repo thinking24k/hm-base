@@ -8,7 +8,7 @@ require(['jquery','utils', 'pagination','jq-validation'],function($,utils){
 		//根据对应的栏目查询对应的新闻列表
 		var defaultImgUrl=utils.current_url+utils.news_default_img;
 		$('#pageList').pagination({
-			url :'base/paging.cmd/doPaging/syVersionDaoImpl/pageQuery',
+			url :'tk/main/order/pagequery',
 			startPage:1,
 			pageSize:10,//,"moduleTable":"sy_msg_info","moduleType":"0"
 			queryParam:{queryClause:{},orderClause:{"creationdate": "desc"}},

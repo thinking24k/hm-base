@@ -4,7 +4,7 @@
 	<head>
 		<!-- Basic -->
     	<meta charset="UTF-8" />
-		<title>简约-列表管理</title>
+		<title>会员-列表管理</title>
 		 <!-- 公用页面 -->
    		 <%@include file="/view/common/common.jsp" %>
 	</head>
